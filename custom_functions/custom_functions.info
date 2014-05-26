@@ -1,0 +1,7 @@
+name = Custom Functions
+project = customfunctions
+description = Inserts pdfs programmatically into nodes
+package = Custom Functions
+version = 7.x-1.01
+core = 7.x
+project status url = http://systems.lib.unb.ca/updates
