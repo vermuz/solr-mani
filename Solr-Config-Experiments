@@ -1,0 +1,255 @@
+====== Apache Solr ======
+
+===== Exact Phrase Match =====
+
+<code>
+<fieldType name="text" class="solr.TextField" positionIncrementGap="100">
+       <analyzer>
+            <tokenizer class="solr.WhitespaceTokenizerFactory"/>
+             <filter class="solr.LimitTokenCountFilterFactory" maxTokenCount="20"/>
+        <filter class="solr.LowerCaseFilterFactory"/>
+        <filter class="solr.NGramFilterFactory" minGramSize="2" maxGramSize="30"/>
+      </analyzer>
+  
+      <analyzer type="query">
+         <tokenizer class="solr.WhitespaceTokenizerFactory"/>
+        <filter class="solr.LimitTokenCountFilterFactory" maxTokenCount="20"/>
+        <filter class="solr.LowerCaseFilterFactory"/>
+      </analyzer>
+    </fieldType>
+</code>
+
+===== Wildcard Search =====
+
+<code>
+<fieldType name="text" class="solr.TextField" positionIncrementGap="100">
+      <analyzer>
+        <tokenizer class="solr.StandardTokenizerFactory"/>
+        <filter class="solr.StandardFilterFactory"/>
+        <filter class="solr.LowerCaseFilterFactory"/>
+        <!--filter class="solr.EdgeNGramFilterFactory" minGramSize="3" maxGramSize="30" side="front"/-->
+        <!--filter class="solr.EdgeNGramFilterFactory" minGramSize="3" maxGramSize="30" side="back"/-->
+        <filter class="solr.NGramFilterFactory" minGramSize="2" maxGramSize="30"/>
+      </analyzer>
+  
+      <analyzer type="query">
+        <tokenizer class="solr.StandardTokenizerFactory"/>
+        <filter class="solr.StandardFilterFactory"/>
+        <filter class="solr.LowerCaseFilterFactory"/>
+      </analyzer>
+    </fieldType>
+</code>
+
+===== SolrConfig.xml =====
+
+<code>
+SolrConfig.xml
+
+<requestHandler name="pinkPony" class="solr.SearchHandler" default="true">
+    <lst name="defaults">
+      <str name="defType">edismax</str>
+      <str name="echoParams">explicit</str>
+      <bool name="omitHeader">true</bool>
+      <float name="tie">0.01</float>
+      <str name="hl">on</str>
+      <str name="hl.fl">*</str>
+      <!-- Don't abort searches for the pinkPony request handler (set in solrcore.properties) -->
+      <int name="timeAllowed">${solr.pinkPony.timeAllowed:-1}</int>
+      <str name="q.alt">*:*</str>
+
+      <!-- By default, don't spell check -->
+      <str name="spellcheck">false</str>
+      <!-- Defaults for the spell checker when used -->
+      <str name="spellcheck.onlyMorePopular">true</str>
+      <str name="spellcheck.extendedResults">false</str>
+      <!--  The number of suggestions to return -->
+      <str name="spellcheck.count">1</str>
+    </lst>
+    <arr name="last-components">
+      <str>spellcheck</str>
+    </arr>
+  </requestHandler>
+</code>
+
+===== Snippet Size ======
+
+<code>
+Schema.xml
+
+<fieldType name="text" class="solr.TextField" positionIncrementGap="100">
+       <analyzer>
+        <!--tokenizer class="solr.StandardTokenizerFactory"/-->
+        <tokenizer class="solr.WhitespaceTokenizerFactory"/>
+        <!--filter class="solr.StandardFilterFactory"/-->
+        <!--filter class="solr.LimitTokenCountFilterFactory" maxTokenCount="30"/-->
+        <filter class="solr.LowerCaseFilterFactory"/>
+        <!--filter class="solr.EdgeNGramFilterFactory" minGramSize="3" maxGramSize="30" side="front"/-->
+        <!--filter class="solr.EdgeNGramFilterFactory" minGramSize="3" maxGramSize="30" side="back"/-->
+        <!--filter class="solr.RemoveDuplicatesTokenFilterFactory"/-->
+        <filter class="solr.NGramFilterFactory" minGramSize="2" maxGramSize="30"/>
+      </analyzer>
+  
+      <analyzer type="query">
+        <tokenizer class="solr.StandardTokenizerFactory"/>
+        <!--tokenizer class="solr.WhitespaceTokenizerFactory"/-->
+        <filter class="solr.LimitTokenCountFilterFactory" maxTokenCount="20"/>
+        <!--filter class="solr.StopFilterFactory" words="stopwords.txt" ignoreCase="true"/-->
+        <!--filter class="solr.StandardFilterFactory"/-->
+        <filter class="solr.LowerCaseFilterFactory"/>
+      </analyzer>
+    </fieldType>
+    
+<fieldType name="textSpell" class="solr.TextField" positionIncrementGap="100">
+      <analyzer>
+        <tokenizer class="solr.StandardTokenizerFactory" />
+        <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt"/>
+        <filter class="solr.LengthFilterFactory" min="4" max="20" />
+        <filter class="solr.LowerCaseFilterFactory" />
+        <filter class="solr.RemoveDuplicatesTokenFilterFactory" />
+        <filter class="solr.NGramFilterFactory" minGramSize="2" maxGramSize="30"/>
+      </analyzer>
+    </fieldType>
+    
+<copyField source="label" dest="spell"/>
+    <copyField source="content" dest="spell"/>
+
+    <copyField source="ts_*" dest="spell"/>
+    <copyField source="tm_*" dest="spell"/>
+    <copyField source="ss_*" dest="spell"/>
+    <copyField source="sm_*" dest="spell"/>
+
+Solrconfig
+
+<requestHandler name="pinkPony" class="solr.SearchHandler" default="true">
+    <lst name="defaults">
+      <str name="defType">edismax</str>
+      <str name="echoParams">explicit</str>
+      <bool name="omitHeader">true</bool>
+      <float name="tie">0.01</float>
+      <str name="hl">on</str>
+      <str name="hl.fl">*</str>
+      <int name="hl.snippets">2</int>
+      <str name="hl.mergeContiguous">true</str>
+      <!-- Don't abort searches for the pinkPony request handler (set in solrcore.properties) -->
+      <int name="timeAllowed">${solr.pinkPony.timeAllowed:-1}</int>
+      <str name="q.alt">*:*</str>
+
+      <!-- By default, don't spell check -->
+      <str name="spellcheck">false</str>
+      <!-- Defaults for the spell checker when used -->
+      <str name="spellcheck.onlyMorePopular">true</str>
+      <str name="spellcheck.extendedResults">false</str>
+      <!--  The number of suggestions to return -->
+      <str name="spellcheck.count">1</str>
+    </lst>
+    <arr name="last-components">
+      <str>spellcheck</str>
+    </arr>
+  </requestHandler>
+  
+  Increased Frag Size
+  
+  <requestHandler name="pinkPony" class="solr.SearchHandler" default="true">
+    <lst name="defaults">
+      <str name="defType">edismax</str>
+      <str name="echoParams">explicit</str>
+      <bool name="omitHeader">true</bool>
+      <float name="tie">0.01</float>
+      <str name="hl">on</str>
+      <str name="hl.fl">*</str>
+      <int name="hl.snippets">1</int>
+      <str name="hl.fragsize">300</str>
+      <str name="hl.mergeContiguous">true</str>
+      <!-- Don't abort searches for the pinkPony request handler (set in solrcore.properties) -->
+      <int name="timeAllowed">${solr.pinkPony.timeAllowed:-1}</int>
+      <str name="q.alt">*:*</str>
+
+      <!-- By default, don't spell check -->
+      <str name="spellcheck">false</str>
+      <!-- Defaults for the spell checker when used -->
+      <str name="spellcheck.onlyMorePopular">true</str>
+      <str name="spellcheck.extendedResults">false</str>
+      <!--  The number of suggestions to return -->
+      <str name="spellcheck.count">1</str>
+    </lst>
+    <arr name="last-components">
+      <str>spellcheck</str>
+    </arr>
+  </requestHandler>
+</code>
+
+====== Highlight Terms ======
+<code>
+highlightterms.js
+(function ($) {
+  $(document).ready(function(){
+    //alert("Hello world!");
+    var searchTerm = $("#edit-search-api-views-fulltext").val();
+    var searchExcerpt = $(".views-field-search-api-excerpt");
+    var creator = $(".views-field-field-issuing-body");
+    var title = $(".views-field-title");
+    //var desired = stringToReplace.replace(/[^\w\s\n]/gi, '');
+    //console.log(searchExcerpt);
+
+    if(typeof searchTerm != 'undefined')
+    {
+       //alert(searchTerm);
+       searchExcerpt.highlight(searchTerm);
+       creator.highlight(searchTerm);
+       title.highlight(searchTerm);
+    }
+
+  });
+})(jQuery);
+
+loyalist_insert.module
+
+function loyalist_insert_preprocess_views_view(&$vars) {
+   $view = $vars['view'];
+   // Make sure it's the correct view
+   if($view->name == 'search_loyalists') {
+     // add needed javascript
+     drupal_add_js(drupal_get_path('module', 'loyalist_insert') . '/highlight_terms.js');
+     drupal_add_js(drupal_get_path('module', 'loyalist_insert') . '/jquery.highlight-4.js');
+     // add needed stylesheet
+     drupal_add_css(drupal_get_path('module', 'loyalist_insert') .'/loyalist_insert.css');
+  }
+}
+
+</code>
+
+solrconfig
+
+<code>
+<requestHandler name="pinkPony" class="solr.SearchHandler" default="true">
+    <lst name="defaults">
+      <str name="defType">edismax</str>
+      <str name="echoParams">explicit</str>
+      <bool name="omitHeader">true</bool>
+      <float name="tie">0.01</float>
+      <str name="hl">on</str>
+      <str name="hl.fl">*</str>
+      <int name="hl.snippets">1</int>
+      <str name="hl.fragsize">300</str>
+      <str name="hl.mergeContiguous">true</str>
+      <bool name="hl.requireFieldMatch">false</bool>
+      <bool name="hl.usePhraseHighlighter">true</bool>
+      <bool name="hl.highlightMultiTerm">true</bool>
+      <!-- Don't abort searches for the pinkPony request handler (set in solrcore.properties) -->
+      <int name="timeAllowed">${solr.pinkPony.timeAllowed:-1}</int>
+      <str name="q.alt">*:*</str>
+
+      <!-- By default, don't spell check -->
+      <str name="spellcheck">false</str>
+      <!-- Defaults for the spell checker when used -->
+      <str name="spellcheck.onlyMorePopular">true</str>
+      <str name="spellcheck.extendedResults">false</str>
+      <!--  The number of suggestions to return -->
+      <str name="spellcheck.count">1</str>
+    </lst>
+    <arr name="last-components">
+      <str>spellcheck</str>
+    </arr>
+  </requestHandler>
+  
+</code>
